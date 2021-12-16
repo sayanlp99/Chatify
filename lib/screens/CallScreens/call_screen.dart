@@ -6,6 +6,8 @@ import 'package:Chatify/configs/configs.dart';
 import 'package:Chatify/models/log.dart';
 import 'package:Chatify/resources/call_methods.dart';
 import 'package:agora_rtc_engine/rtc_engine.dart';
+import 'package:agora_rtc_engine/rtc_local_view.dart' as RtcLocalView;
+import 'package:agora_rtc_engine/rtc_remote_view.dart' as RtcRemoteView;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -151,10 +153,9 @@ class _CallScreenState extends State<CallScreen> {
 
   /// Helper function to get list of native views
   List<Widget> _getRenderViews() {
-    final List<AgoraRenderWidget> list = [
-      AgoraRenderWidget(0, local: true, preview: true),
-    ];
-    _users.forEach((int uid) => list.add(AgoraRenderWidget(uid)));
+    final List<StatefulWidget> list = [];
+    list.add(RtcLocalView.SurfaceView());
+    _users.forEach((int uid) => list.add(RtcRemoteView.SurfaceView(uid: uid)));
     return list;
   }
 
