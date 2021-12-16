@@ -71,7 +71,7 @@ class _SplashScreenState extends State<SplashScreen>
 
     fcmToken = await _messaging.getToken();
 
-    await FirebaseAuth.instance.authStateChanges().listen((user) {
+    FirebaseAuth.instance.authStateChanges().listen((user) {
       if (user != null) {
         FirebaseFirestore.instance
             .collection("Users")
@@ -99,7 +99,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return SplashScreenView(
-      home: isAlreadyLoggedIn
+      navigateRoute: isAlreadyLoggedIn
           ? HomeScreen(currentuserid: currentuserid)
           : WelcomeScreen(),
       duration: 5500,
@@ -113,7 +113,6 @@ class _SplashScreenState extends State<SplashScreen>
         kPrimaryColor,
       ],
       backgroundColor: Colors.white,
-      navigateRoute: null,
     );
 
     // return Scaffold(
