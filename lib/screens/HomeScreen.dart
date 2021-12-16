@@ -102,7 +102,7 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
     ChatsPage(),
     UserList(),
     LogScreen(),
-    Settings(),
+    AccountSettingsPage(),
   ];
 
   void _onItemTapped(int index) {
