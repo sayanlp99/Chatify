@@ -23,7 +23,7 @@ class _SignInState extends State<SignIn> {
 
   final GlobalKey<FormState> _formkey = GlobalKey<FormState>();
   static const kPrimaryColor = Color(0xFF6F35A5);
-  final FirebaseMessaging _messaging = FirebaseMessaging();
+  final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   String fcmToken;
   TextEditingController emailEditingController = new TextEditingController();
   TextEditingController passwordEditingController = new TextEditingController();
@@ -117,7 +117,9 @@ class _SignInState extends State<SignIn> {
                     ),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _passwordVisible ? Icons.visibility_off : Icons.visibility,
+                        _passwordVisible
+                            ? Icons.visibility_off
+                            : Icons.visibility,
                         color: kPrimaryColor,
                       ),
                       onPressed: () {
@@ -169,7 +171,7 @@ class _SignInState extends State<SignIn> {
     });
     preferences = await SharedPreferences.getInstance();
 
-    FirebaseUser firebaseUser;
+    var firebaseUser;
 
     await _auth
         .signInWithEmailAndPassword(
@@ -185,22 +187,22 @@ class _SignInState extends State<SignIn> {
     });
 
     if (firebaseUser != null) {
-      Firestore.instance
+      FirebaseFirestore.instance
           .collection("Users")
-          .document(firebaseUser.uid)
-          .updateData({"fcmToken": fcmToken});
+          .doc(firebaseUser.uid)
+          .update({"fcmToken": fcmToken});
 
-      Firestore.instance
+      FirebaseFirestore.instance
           .collection("Users")
-          .document(firebaseUser.uid)
+          .doc(firebaseUser.uid)
           .get()
           .then((datasnapshot) async {
-        print(datasnapshot.data["photoUrl"]);
+        print(datasnapshot.data()["photoUrl"]);
 
-        await preferences.setString("uid", datasnapshot.data["uid"]);
-        await preferences.setString("name", datasnapshot.data["name"]);
-        await preferences.setString("photo", datasnapshot.data["photoUrl"]);
-        await preferences.setString("email", datasnapshot.data["email"]);
+        await preferences.setString("uid", datasnapshot.data()["uid"]);
+        await preferences.setString("name", datasnapshot.data()["name"]);
+        await preferences.setString("photo", datasnapshot.data()["photoUrl"]);
+        await preferences.setString("email", datasnapshot.data()["email"]);
 
         this.setState(() {
           isloading = false;

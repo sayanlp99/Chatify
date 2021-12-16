@@ -3,10 +3,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CallMethods {
   final CollectionReference callCollection =
-      Firestore.instance.collection("call");
+      FirebaseFirestore.instance.collection("call");
 
   Stream<DocumentSnapshot> callStream({String uid}) =>
-      callCollection.document(uid).snapshots();
+      callCollection.doc(uid).snapshots();
 
   Future<bool> makeCall({Call call}) async {
     try {
@@ -16,10 +16,10 @@ class CallMethods {
       call.hasDialled = false;
       Map<String, dynamic> hasNotDialledMap = call.toMap(call);
 
-      await callCollection.document(call.callerId).setData(hasDialledMap);
-      await callCollection.document(call.receiverId).setData(hasNotDialledMap);
+      await callCollection.doc(call.callerId).set(hasDialledMap);
+      await callCollection.doc(call.receiverId).set(hasNotDialledMap);
       callCollection
-          .document(call.callerId)
+          .doc(call.callerId)
           .get()
           .then((value) => print(value.data));
 
@@ -32,8 +32,8 @@ class CallMethods {
 
   Future<bool> endCall({Call call}) async {
     try {
-      await callCollection.document(call.callerId).delete();
-      await callCollection.document(call.receiverId).delete();
+      await callCollection.doc(call.callerId).delete();
+      await callCollection.doc(call.receiverId).delete();
       return true;
     } catch (e) {
       print(e);

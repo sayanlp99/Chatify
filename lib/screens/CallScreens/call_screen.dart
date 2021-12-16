@@ -5,9 +5,11 @@ import 'package:Chatify/models/call.dart';
 import 'package:Chatify/configs/configs.dart';
 import 'package:Chatify/models/log.dart';
 import 'package:Chatify/resources/call_methods.dart';
-import 'package:agora_rtc_engine/agora_rtc_engine.dart';
+import 'package:agora_rtc_engine/rtc_engine.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class CallScreen extends StatefulWidget {
@@ -23,6 +25,9 @@ class CallScreen extends StatefulWidget {
 
 class _CallScreenState extends State<CallScreen> {
   final CallMethods callMethods = CallMethods();
+  RtcEngine _engine;
+  bool isJoined = false, switchCamera = true, switchRender = true;
+  List<int> remoteUid = [];
 
   SharedPreferences preferences;
   StreamSubscription callStreamSubscription;
@@ -40,6 +45,16 @@ class _CallScreenState extends State<CallScreen> {
     initializeAgora();
   }
 
+  _initEngine() async {
+    _engine = await RtcEngine.createWithContext(RtcEngineContext(APP_ID));
+    this._addListeners();
+
+    await _engine.enableVideo();
+    await _engine.startPreview();
+    await _engine.setChannelProfile(ChannelProfile.LiveBroadcasting);
+    await _engine.setClientRole(ClientRole.Broadcaster);
+  }
+
   Future<void> initializeAgora() async {
     if (APP_ID.isEmpty) {
       setState(() {
@@ -51,113 +66,70 @@ class _CallScreenState extends State<CallScreen> {
       return;
     }
 
-    await _initAgoraRtcEngine();
-    _addAgoraEventHandlers();
-    await AgoraRtcEngine.enableWebSdkInteroperability(true);
-    await AgoraRtcEngine.setParameters(
+    await _initEngine();
+
+    await _engine.enableWebSdkInteroperability(true);
+    await _engine.setParameters(
         '''{\"che.video.lowBitRateStreamParameter\":{\"width\":320,\"height\":180,\"frameRate\":15,\"bitRate\":140}}''');
-    await AgoraRtcEngine.joinChannel(null, widget.call.channelId, null, 0);
+    await _engine.joinChannel(null, widget.call.channelId, null, 0);
   }
 
-  /// Create agora sdk instance and initialize
-  Future<void> _initAgoraRtcEngine() async {
-    await AgoraRtcEngine.create(APP_ID);
-    await AgoraRtcEngine.enableVideo();
+  _addListeners() {
+    _engine.setEventHandler(RtcEngineEventHandler(
+      joinChannelSuccess: (channel, uid, elapsed) {
+        debugPrint('joinChannelSuccess ${channel} ${uid} ${elapsed}');
+        setState(() {
+          isJoined = true;
+        });
+      },
+      userJoined: (uid, elapsed) {
+        debugPrint('userJoined  ${uid} ${elapsed}');
+        setState(() {
+          remoteUid.add(uid);
+        });
+      },
+      userOffline: (uid, reason) {
+        debugPrint('userOffline  ${uid} ${reason}');
+        setState(() {
+          remoteUid.removeWhere((element) => element == uid);
+        });
+      },
+      leaveChannel: (stats) {
+        debugPrint('leaveChannel ${stats.toJson()}');
+        setState(() {
+          isJoined = false;
+          remoteUid.clear();
+        });
+      },
+    ));
   }
 
-  /// Add agora event handlers
-  void _addAgoraEventHandlers() {
-    AgoraRtcEngine.onError = (dynamic code) {
-      setState(() {
-        final info = 'onError: $code';
-        _infoStrings.add(info);
-      });
-    };
+  _joinChannel() async {
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      await [Permission.microphone, Permission.camera].request();
+    }
+    await _engine.joinChannel(null, "docotor", null, 0);
+  }
 
-    AgoraRtcEngine.onJoinChannelSuccess = (
-      String channel,
-      int uid,
-      int elapsed,
-    ) {
-      setState(() {
-        final info = 'onJoinChannel: $channel, uid: $uid';
-        _infoStrings.add(info);
-      });
-    };
+  _leaveChannel() async {
+    await _engine.leaveChannel();
+  }
 
-    AgoraRtcEngine.onUserJoined = (int uid, int elapsed) {
+  _switchCamera() {
+    _engine.switchCamera().then((value) {
       setState(() {
-        hasUserJoined = true;
-        final info = 'onUserJoined: $uid';
-        _infoStrings.add(info);
-        _users.add(uid);
+        switchCamera = !switchCamera;
       });
-    };
+    }).catchError((err) {
+      debugPrint('switchCamera $err');
+    });
+  }
 
-    AgoraRtcEngine.onUpdatedUserInfo = (AgoraUserInfo userInfo, int i) {
-      setState(() {
-        final info = 'onUpdatedUserInfo: ${userInfo.toString()}';
-        _infoStrings.add(info);
-      });
-    };
-
-    AgoraRtcEngine.onRejoinChannelSuccess = (String string, int a, int b) {
-      setState(() {
-        final info = 'onRejoinChannelSuccess: $string';
-        _infoStrings.add(info);
-      });
-    };
-
-    AgoraRtcEngine.onUserOffline = (int a, int b) {
-      callMethods.endCall(call: widget.call);
-      setState(() {
-        final info = 'onUserOffline: a: ${a.toString()}, b: ${b.toString()}';
-        _infoStrings.add(info);
-      });
-    };
-
-    AgoraRtcEngine.onRegisteredLocalUser = (String s, int i) {
-      setState(() {
-        final info = 'onRegisteredLocalUser: string: s, i: ${i.toString()}';
-        _infoStrings.add(info);
-      });
-    };
-
-    AgoraRtcEngine.onLeaveChannel = () {
-      setState(() {
-        _infoStrings.add('onLeaveChannel');
-        _users.clear();
-      });
-    };
-
-    AgoraRtcEngine.onConnectionLost = () {
-      setState(() {
-        final info = 'onConnectionLost';
-        _infoStrings.add(info);
-      });
-    };
-
-    AgoraRtcEngine.onUserOffline = (int uid, int reason) {
-      // if call was picked
-
-      setState(() {
-        final info = 'userOffline: $uid';
-        _infoStrings.add(info);
-        _users.remove(uid);
-      });
-    };
-
-    AgoraRtcEngine.onFirstRemoteVideoFrame = (
-      int uid,
-      int width,
-      int height,
-      int elapsed,
-    ) {
-      setState(() {
-        final info = 'firstRemoteVideo: $uid ${width}x $height';
-        _infoStrings.add(info);
-      });
-    };
+  _switchRender() {
+    setState(() {
+      switchRender = !switchRender;
+      remoteUid = List.of(remoteUid.reversed);
+    });
   }
 
   addPostFrameCallback() async {
@@ -274,12 +246,12 @@ class _CallScreenState extends State<CallScreen> {
                     timestamp: DateTime.now().toString(),
                     callStatus: CALL_STATUS_MISSED);
 
-                Firestore.instance
+                FirebaseFirestore.instance
                     .collection("Users")
-                    .document(widget.call.receiverId)
+                    .doc(widget.call.receiverId)
                     .collection("callLogs")
-                    .document(log.timestamp)
-                    .setData({
+                    .doc(log.timestamp)
+                    .set({
                   "callerName": log.callerName,
                   "callerPic": log.callerPic,
                   "receiverName": log.receiverName,
@@ -370,11 +342,11 @@ class _CallScreenState extends State<CallScreen> {
     setState(() {
       muted = !muted;
     });
-    AgoraRtcEngine.muteLocalAudioStream(muted);
+    _engine.muteLocalAudioStream(muted);
   }
 
   void _onSwitchCamera() {
-    AgoraRtcEngine.switchCamera();
+    _engine.switchCamera();
   }
 
   @override
@@ -382,8 +354,8 @@ class _CallScreenState extends State<CallScreen> {
     // clear users
     _users.clear();
     // destroy sdk
-    AgoraRtcEngine.leaveChannel();
-    AgoraRtcEngine.destroy();
+    _engine.leaveChannel();
+    _engine.destroy();
     callStreamSubscription.cancel();
     super.dispose();
   }

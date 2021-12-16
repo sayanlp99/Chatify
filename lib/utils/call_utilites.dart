@@ -42,12 +42,12 @@ class CallUtils {
     call.hasDialled = true;
 
     if (callMade) {
-      Firestore.instance
+      FirebaseFirestore.instance
           .collection("Users")
-          .document(currUserId)
+          .doc(currUserId)
           .collection("callLogs")
-          .document(log.timestamp)
-          .setData({
+          .doc(log.timestamp)
+          .set({
         "callerName": log.callerName,
         "callerPic": log.callerPic,
         "callStatus": log.callStatus,

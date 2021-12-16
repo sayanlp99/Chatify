@@ -38,10 +38,10 @@ class _ChatsPageState extends State<ChatsPage> {
   _getUsersDetails() async {
     await getCurrUserId();
     QuerySnapshot querySnapshot =
-        await Firestore.instance.collection("Users").getDocuments();
+        await FirebaseFirestore.instance.collection("Users").get();
 
     setState(() {
-      allUsersWithDetails = querySnapshot.documents;
+      allUsersWithDetails = querySnapshot.docs;
       allUsersWithDetails
           .removeWhere((element) => element["uid"] == currentuserid);
     });
@@ -79,9 +79,9 @@ class _ChatsPageState extends State<ChatsPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             StreamBuilder(
-              stream: Firestore.instance
+              stream: FirebaseFirestore.instance
                   .collection("Users")
-                  .document(currentuserid)
+                  .doc(currentuserid)
                   .collection("chatList")
                   .orderBy("timestamp", descending: true)
                   .snapshots(),

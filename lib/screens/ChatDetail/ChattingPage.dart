@@ -187,15 +187,15 @@ class ChatScreenState extends State<ChatScreen> {
   }
 
   readLocal() async {
-    Firestore.instance
+    FirebaseFirestore.instance
         .collection("Users")
-        .document(receiverId)
+        .doc(receiverId)
         .get()
         .then((datasnapshot) {
       // print(datasnapshot.data["name"]);
       // print(datasnapshot.data["fcmToken"]);
       setState(() {
-        recieverFcmToken = datasnapshot.data["fcmToken"];
+        recieverFcmToken = datasnapshot.data()["fcmToken"];
       });
     });
     preferences = await SharedPreferences.getInstance();
@@ -314,9 +314,9 @@ class ChatScreenState extends State<ChatScreen> {
                   valueColor: AlwaysStoppedAnimation(kPrimaryColor)),
             )
           : StreamBuilder(
-              stream: Firestore.instance
+              stream: FirebaseFirestore.instance
                   .collection("messages")
-                  .document(chatId)
+                  .doc(chatId)
                   .collection(chatId)
                   .orderBy("timestamp", descending: true)
                   // .limit(20)
@@ -350,44 +350,43 @@ class ChatScreenState extends State<ChatScreen> {
   }
 
   onDeleteMsg(DocumentSnapshot document) {
-    var docRef = Firestore.instance
+    var docRef = FirebaseFirestore.instance
         .collection("messages")
-        .document(chatId)
+        .doc(chatId)
         .collection(chatId)
-        .document(document['timestamp']);
+        .doc(document['timestamp']);
     if (document['timestamp'] == listMessage[0]['timestamp']) {
       //check type of document if image delete from storage
       if (document['type'] == Utils.msgToNum(MessageType.Image)) {
         FirebaseStorage.instance
-            .getReferenceFromUrl(document["content"])
-            .then((res) {
-          res.delete().then((value) => print("Deleted"));
-        });
+            .refFromURL(document["content"])
+            .delete()
+            .then((value) => print("Deleted"));
       }
       // 𝘛𝘩𝘪𝘴 𝘮𝘦𝘴𝘴𝘢𝘨𝘦 𝘸𝘢𝘴 𝘥𝘦𝘭𝘦𝘵𝘦𝘥
-      docRef.updateData({
-        "content": "🚫 𝘛𝘩𝘪𝘴 𝘮𝘴𝘨 𝘸𝘢𝘴 𝘥𝘦𝘭𝘦𝘵𝘦𝘥",
+      docRef.update({
+        "content": "🚫 This message was deleted",
         "type": Utils.msgToNum(MessageType.Deleted)
       });
       //change content and type of document
       //change from chatlist as well on both sides
-      Firestore.instance
+      FirebaseFirestore.instance
           .collection("Users")
-          .document(id)
+          .doc(id)
           .collection("chatList")
-          .document(receiverId)
-          .updateData({
-        "content": "🚫 𝘛𝘩𝘪𝘴 𝘮𝘴𝘨 𝘸𝘢𝘴 𝘥𝘦𝘭𝘦𝘵𝘦𝘥",
+          .doc(receiverId)
+          .update({
+        "content": "🚫 This message was deleted",
         "type": Utils.msgToNum(MessageType.Deleted),
       });
 
-      Firestore.instance
+      FirebaseFirestore.instance
           .collection("Users")
-          .document(receiverId)
+          .doc(receiverId)
           .collection("chatList")
-          .document(id)
-          .updateData({
-        "content": "🚫 𝘛𝘩𝘪𝘴 𝘮𝘴𝘨 𝘸𝘢𝘴 𝘥𝘦𝘭𝘦𝘵𝘦𝘥",
+          .doc(id)
+          .update({
+        "content": "🚫 This message was deleted",
         "type": Utils.msgToNum(MessageType.Deleted),
       });
     } else {
@@ -396,13 +395,12 @@ class ChatScreenState extends State<ChatScreen> {
       //change content and type of document
       if (document['type'] == Utils.msgToNum(MessageType.Image)) {
         FirebaseStorage.instance
-            .getReferenceFromUrl(document["content"])
-            .then((res) {
-          res.delete().then((value) => print("Deleted"));
-        });
+            .refFromURL(document["content"])
+            .delete()
+            .then((value) => print("Deleted"));
       }
-      docRef.updateData({
-        "content": "🚫 𝘛𝘩𝘪𝘴 𝘮𝘴𝘨 𝘸𝘢𝘴 𝘥𝘦𝘭𝘦𝘵𝘦𝘥",
+      docRef.update({
+        "content": "🚫 This message was deleted",
         "type": Utils.msgToNum(MessageType.Deleted),
       });
     }
@@ -478,46 +476,52 @@ class ChatScreenState extends State<ChatScreen> {
           ? contentMsg
           : type == MessageType.Image
               ? "Image"
-              : type == MessageType.Gif ? "GIF" : "Sticker";
+              : type == MessageType.Gif
+                  ? "GIF"
+                  : "Sticker";
       String image = type == MessageType.Image ? contentMsg : "";
 
       sendPushNotification(
           preferences.getString('name'), recieverFcmToken, body, image);
       textEditingController.clear();
 
-      Firestore.instance
+      FirebaseFirestore.instance
           .collection("Users")
-          .document(id)
+          .doc(id)
           .collection("chatList")
-          .document(receiverId)
-          .setData({
-        "id": receiverId,
-        "content": contentMsg,
-        "type": Utils.msgToNum(type),
-        "timestamp": currTime,
-        "showCheck": true
-      }, merge: true);
+          .doc(receiverId)
+          .set(
+        {
+          "id": receiverId,
+          "content": contentMsg,
+          "type": Utils.msgToNum(type),
+          "timestamp": currTime,
+          "showCheck": true
+        },
+      );
 
-      Firestore.instance
+      FirebaseFirestore.instance
           .collection("Users")
-          .document(receiverId)
+          .doc(receiverId)
           .collection("chatList")
-          .document(id)
-          .setData({
-        "id": id,
-        "content": contentMsg,
-        "type": Utils.msgToNum(type),
-        "timestamp": currTime,
-        "showCheck": false
-      }, merge: true);
+          .doc(id)
+          .set(
+        {
+          "id": id,
+          "content": contentMsg,
+          "type": Utils.msgToNum(type),
+          "timestamp": currTime,
+          "showCheck": false
+        },
+      );
 
-      var docRef = Firestore.instance
+      var docRef = FirebaseFirestore.instance
           .collection("messages")
-          .document(chatId)
+          .doc(chatId)
           .collection(chatId)
-          .document(currTime);
-      Firestore.instance.runTransaction((transaction) async {
-        await transaction.set(
+          .doc(currTime);
+      FirebaseFirestore.instance.runTransaction((transaction) async {
+        transaction.set(
           docRef,
           {
             "idFrom": id,
@@ -567,12 +571,11 @@ class ChatScreenState extends State<ChatScreen> {
 
   Future uploadImageFile() async {
     String fileName = DateTime.now().millisecondsSinceEpoch.toString();
-    StorageReference storageReference =
+    var storageReference =
         FirebaseStorage.instance.ref().child("Chat Images").child(fileName);
 
-    StorageUploadTask storageUploadTask = storageReference.putFile(imageFile);
-    StorageTaskSnapshot storageTaskSnapshot =
-        await storageUploadTask.onComplete;
+    var storageUploadTask = storageReference.putFile(imageFile);
+    var storageTaskSnapshot = await storageUploadTask.whenComplete(() => null);
 
     storageTaskSnapshot.ref.getDownloadURL().then((downloadUrl) {
       imageUrl = downloadUrl;

@@ -23,7 +23,7 @@ class PickupLayout extends StatelessWidget {
             // initialData: null,
             builder: (context, snapshot) {
               if (snapshot.hasData && snapshot.data.data != null) {
-                Call call = Call.fromMap(snapshot.data.data);
+                Call call = Call.fromMap(snapshot.data.data());
 
                 if (!call.hasDialled) {
                   FlutterRingtonePlayer.playRingtone();

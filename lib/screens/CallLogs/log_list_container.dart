@@ -54,12 +54,12 @@ class _LogListContainerState extends State<LogListContainer> {
     return widget.currentuserid == null
         ? oldcircularprogress()
         : FutureBuilder(
-            future: Firestore.instance
+            future: FirebaseFirestore.instance
                 .collection("Users")
-                .document(widget.currentuserid)
+                .doc(widget.currentuserid)
                 .collection("callLogs")
                 .orderBy("timestamp", descending: true)
-                .getDocuments(),
+                .get(),
             builder: (BuildContext context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return oldcircularprogress();
@@ -83,22 +83,22 @@ class _LogListContainerState extends State<LogListContainer> {
                                   content: Text(
                                       "Are you sure you want to delete this log?"),
                                   actions: [
-                                    FlatButton(
+                                    ElevatedButton(
                                       child: Text("YES"),
                                       onPressed: () async {
                                         Navigator.pop(context);
-                                        Firestore.instance
+                                        FirebaseFirestore.instance
                                             .collection("Users")
-                                            .document(widget.currentuserid)
+                                            .doc(widget.currentuserid)
                                             .collection("callLogs")
-                                            .document(_log["timestamp"])
+                                            .doc(_log["timestamp"])
                                             .delete();
                                         if (mounted) {
                                           setState(() {});
                                         }
                                       },
                                     ),
-                                    FlatButton(
+                                    ElevatedButton(
                                       child: Text("NO"),
                                       onPressed: () => Navigator.pop(context),
                                     ),

@@ -60,12 +60,12 @@ class _PickupScreenState extends State<PickupScreen>
         timestamp: DateTime.now().toString(),
         callStatus: callStatus);
 
-    Firestore.instance
+    FirebaseFirestore.instance
         .collection("Users")
-        .document(widget.call.receiverId)
+        .doc(widget.call.receiverId)
         .collection("callLogs")
-        .document(log.timestamp)
-        .setData({
+        .doc(log.timestamp)
+        .set({
       "callerName": log.callerName,
       "callerPic": log.callerPic,
       "receiverName": log.receiverName,

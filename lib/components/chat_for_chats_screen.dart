@@ -60,9 +60,9 @@ class _ChatChatsScreenState extends State<ChatChatsScreen> {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder(
-      stream: Firestore.instance
+      stream: FirebaseFirestore.instance
           .collection("Users")
-          .document(widget.data["id"])
+          .doc(widget.data["id"])
           .snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {

@@ -22,7 +22,7 @@ class _SplashScreenState extends State<SplashScreen>
   // Animation<double> animation;
   // var _visible = true;
 
-  final FirebaseMessaging _messaging = FirebaseMessaging();
+  final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   String fcmToken;
   bool isAlreadyLoggedIn = false;
   String currentuserid;
@@ -40,14 +40,15 @@ class _SplashScreenState extends State<SplashScreen>
 
     precachePicture(
         ExactAssetPicture(
-            SvgPicture.svgStringDecoder, 'assets/icons/signup.svg'),
-        null);
-    precachePicture(
-        ExactAssetPicture(SvgPicture.svgStringDecoder, 'assets/icons/chat.svg'),
+            SvgPicture.svgStringDecoderBuilder, 'assets/icons/signup.svg'),
         null);
     precachePicture(
         ExactAssetPicture(
-            SvgPicture.svgStringDecoder, 'assets/icons/login.svg'),
+            SvgPicture.svgStringDecoderBuilder, 'assets/icons/chat.svg'),
+        null);
+    precachePicture(
+        ExactAssetPicture(
+            SvgPicture.svgStringDecoderBuilder, 'assets/icons/login.svg'),
         null);
 
     // animation.addListener(() => this.setState(() {}));
@@ -70,12 +71,12 @@ class _SplashScreenState extends State<SplashScreen>
 
     fcmToken = await _messaging.getToken();
 
-    await FirebaseAuth.instance.currentUser().then((user) {
+    await FirebaseAuth.instance.authStateChanges().listen((user) {
       if (user != null) {
-        Firestore.instance
+        FirebaseFirestore.instance
             .collection("Users")
-            .document(preferences.getString("uid"))
-            .updateData({"fcmToken": fcmToken});
+            .doc(preferences.getString("uid"))
+            .update({"fcmToken": fcmToken});
 
         setState(() {
           isAlreadyLoggedIn = true;
@@ -112,6 +113,7 @@ class _SplashScreenState extends State<SplashScreen>
         kPrimaryColor,
       ],
       backgroundColor: Colors.white,
+      navigateRoute: null,
     );
 
     // return Scaffold(

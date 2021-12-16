@@ -12,13 +12,13 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class Settings extends StatelessWidget {
+class AccountSettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          "Account Settings",
+          "Account Settings Page",
           style: TextStyle(
               fontFamily: 'Courgette', letterSpacing: 1.25, fontSize: 24),
         ),
@@ -31,17 +31,17 @@ class Settings extends StatelessWidget {
         ],
         centerTitle: true,
       ),
-      body: SettingsScreen(),
+      body: AccountSettingsPageScreen(),
     );
   }
 }
 
-class SettingsScreen extends StatefulWidget {
+class AccountSettingsPageScreen extends StatefulWidget {
   @override
-  State createState() => SettingsScreenState();
+  State createState() => AccountSettingsPageScreenState();
 }
 
-class SettingsScreenState extends State<SettingsScreen> {
+class AccountSettingsPageScreenState extends State<AccountSettingsPageScreen> {
   SharedPreferences preferences;
   TextEditingController nameTextEditingController;
   TextEditingController emailTextEditingController;
@@ -99,18 +99,18 @@ class SettingsScreenState extends State<SettingsScreen> {
 
   Future uploadImageToFirestoreAndStorage() async {
     String mFileName = id;
-    StorageReference storageReference =
-        FirebaseStorage.instance.ref().child(mFileName);
-    StorageUploadTask storageUploadTask =
-        storageReference.putFile(imageFileAvatar);
-    StorageTaskSnapshot storageTaskSnapshot;
-    storageUploadTask.onComplete.then((value) {
-      if (value.error == null) {
+    var storageReference = FirebaseStorage.instance.ref().child(mFileName);
+    var storageUploadTask = storageReference.putFile(imageFileAvatar);
+    var storageTaskSnapshot;
+    storageUploadTask.then((value) {
+      if (value == null) {
         storageTaskSnapshot = value;
         storageTaskSnapshot.ref.getDownloadURL().then((newImageDownloadUrl) {
           photoUrl = newImageDownloadUrl;
-          Firestore.instance.collection("Users").document(id).updateData(
-              {"photoUrl": photoUrl, "name": name}).then((data) async {
+          FirebaseFirestore.instance
+              .collection("Users")
+              .doc(id)
+              .update({"photoUrl": photoUrl, "name": name}).then((data) async {
             await preferences.setString("photo", photoUrl);
 
             setState(() {
@@ -141,10 +141,10 @@ class SettingsScreenState extends State<SettingsScreen> {
       isLoading = false;
     });
 
-    Firestore.instance
+    FirebaseFirestore.instance
         .collection("Users")
-        .document(id)
-        .updateData({"name": name}).then((data) async {
+        .doc(id)
+        .update({"name": name}).then((data) async {
       await preferences.setString("photo", photoUrl);
       await preferences.setString("name", name);
 

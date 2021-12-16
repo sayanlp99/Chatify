@@ -65,7 +65,8 @@ class _UserListState extends State<UserList> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             StreamBuilder(
-              stream: Firestore.instance.collection("Users").snapshots(),
+              stream:
+                  FirebaseFirestore.instance.collection("Users").snapshots(),
               builder: (context, snapshot) {
                 if (!snapshot.hasData) {
                   return Container(

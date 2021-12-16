@@ -12,14 +12,14 @@ class UserStateMethods {
 
   void setUserState({@required String userId, @required UserState userState}) {
     int stateNum = Utils.stateToNum(userState);
-    Firestore.instance.collection("Users").document(userId).updateData({
+    FirebaseFirestore.instance.collection("Users").doc(userId).update({
       "state": stateNum,
       "lastSeen": DateTime.now().millisecondsSinceEpoch.toString(),
     });
   }
 
   Stream<DocumentSnapshot> getUserStream({@required String uid}) =>
-      Firestore.instance.collection("Users").document(uid).snapshots();
+      FirebaseFirestore.instance.collection("Users").doc(uid).snapshots();
 
   Future<Null> logoutuser(BuildContext context) async {
     preferences = await SharedPreferences.getInstance();

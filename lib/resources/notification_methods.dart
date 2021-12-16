@@ -22,7 +22,7 @@ Future<bool> sendPushNotification(
     'Authorization': "key=$FCM_SERVER_KEY" // 'key=YOUR_SERVER_KEY'
   };
 
-  final response = await http.post(postUrl,
+  final response = await http.post(Uri.parse(postUrl),
       body: jsonEncode(data),
       // encoding: Encoding.getByName('utf-8'),
       headers: headers);

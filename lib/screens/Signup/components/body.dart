@@ -24,7 +24,7 @@ class _SignUpState extends State<SignUp> {
       "https://moonvillageassociation.org/wp-content/uploads/2018/06/default-profile-picture1.jpg";
   static const kPrimaryColor = Color(0xFF6F35A5);
   final GlobalKey<FormState> _formkey = GlobalKey<FormState>();
-  final FirebaseMessaging _messaging = FirebaseMessaging();
+  final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   String fcmToken;
   TextEditingController nameEditingController = new TextEditingController();
   TextEditingController emailEditingController = new TextEditingController();
@@ -50,7 +50,7 @@ class _SignUpState extends State<SignUp> {
       isloading = true;
     });
     preferences = await SharedPreferences.getInstance();
-    FirebaseUser firebaseUser;
+    var firebaseUser;
 
     await _auth
         .createUserWithEmailAndPassword(
@@ -66,17 +66,17 @@ class _SignUpState extends State<SignUp> {
     });
 
     if (firebaseUser != null) {
-      final QuerySnapshot result = await Firestore.instance
+      final QuerySnapshot result = await FirebaseFirestore.instance
           .collection("Users")
           .where("uid", isEqualTo: firebaseUser.uid)
-          .getDocuments();
+          .get();
 
-      final List<DocumentSnapshot> documents = result.documents;
+      final List<DocumentSnapshot> documents = result.docs;
       if (documents.length == 0) {
-        Firestore.instance
+        FirebaseFirestore.instance
             .collection("Users")
-            .document(firebaseUser.uid)
-            .setData({
+            .doc(firebaseUser.uid)
+            .set({
           "uid": firebaseUser.uid,
           "email": firebaseUser.email,
           "name": nameEditingController.text,
@@ -86,7 +86,7 @@ class _SignUpState extends State<SignUp> {
           "lastSeen": DateTime.now().millisecondsSinceEpoch.toString(),
           "fcmToken": fcmToken
         });
-        FirebaseUser currentuser = firebaseUser;
+        var currentuser = firebaseUser;
         await preferences.setString("uid", currentuser.uid);
         await preferences.setString("name", nameEditingController.text);
         await preferences.setString("photo", defaultPhotoUrl);
