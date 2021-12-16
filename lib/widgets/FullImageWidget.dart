@@ -41,15 +41,6 @@ class FullPhotoScreenState extends State<FullPhotoScreen> {
     return Container(
       child: PhotoView(
         imageProvider: NetworkImage(url),
-        loadingBuilder: Center(
-          child: Container(
-            width: 50.0,
-            height: 50.0,
-            child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation(kPrimaryColor),
-            ),
-          ),
-        ),
       ),
     );
   }
